@@ -1,5 +1,6 @@
 from collections import abc
 
+
 class Classifier:
     def __init__(self, model_path:str) -> None:
         pass
