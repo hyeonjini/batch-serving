@@ -1,14 +1,14 @@
 from collections import abc
 
 class Classifier:
-    def __init__(self) -> None:
+    def __init__(self, model_path:str) -> None:
         pass
 
     def inference(self):
         return NotImplementedError()
     
     def __str__(self) -> str:
-        return type(self)
+        return str(type(self))
 
 
 class ComputerVisionClassifier(Classifier):

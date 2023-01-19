@@ -4,11 +4,10 @@ from classifier.classifier import Classifier
 class ChallengeService:
     
     def __init__(self, classifier: Classifier) -> None:
-        self._classifier = classifier
+        self.classifier = classifier
 
     def service(self):
         return NotImplementedError()
-
 
 class ComputerVisionChallengeService(ChallengeService):
 
