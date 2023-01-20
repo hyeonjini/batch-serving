@@ -1,4 +1,5 @@
-dependency-injector
+dependency_injector
 pyyaml
 pytest
 pytest-cov
+torch == 1.12.0+cu116

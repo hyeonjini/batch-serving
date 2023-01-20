@@ -12,42 +12,35 @@ class Classifier:
         return str(type(self))
 
 
-class ComputerVisionClassifier(Classifier):
+class ImageClassifier(Classifier):
     def __init__(self) -> None:
         pass
 
     def inference(self):
         return super().inference()
 
-class NLPClassifier(Classifier):
+class Textlassifier(Classifier):
     def __init__(self) -> None:
         super().__init__()
     
     def inference(self):
         return super().inference()
 
-class BrothyClassifier(ComputerVisionClassifier):
+class BrothyClassifier(ImageClassifier):
     def __init__(self) -> None:
         pass
 
     def inference(self):
         return super().inference()
 
-class NoodleClassifier(ComputerVisionClassifier):
+class NoodleClassifier(ImageClassifier):
     def __init__(self) -> None:
         pass
 
     def inference(self):
         return super().inference()
 
-class RiceClassifier(ComputerVisionClassifier):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def inference(self):
-        return super().inference()
-
-class TextClassifier(NLPClassifier):
+class RiceClassifier(ImageClassifier):
     def __init__(self) -> None:
         super().__init__()
 
