@@ -30,7 +30,7 @@ class ImageClassifier(Classifier):
 
         return outputs
 
-class Textlassifier(Classifier):
+class TextClassifier(Classifier):
     def __init__(self) -> None:
         super().__init__()
     
