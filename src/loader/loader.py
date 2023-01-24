@@ -29,10 +29,12 @@ class JitScriptLoader(ModelLoader):
     ) -> None:
         super().__init__(model_path)
 
-        self.model: torch.jit.ScriptModule
+        self.model: torch.jit.ScriptModule = None
+        self.load_model()
 
     def load_model(self) -> None:
         self.model = torch.jit.load(self.model_path)
+        self.model.eval()
 
     def get_model(self) -> torch.jit.ScriptModule:
         return self.model
