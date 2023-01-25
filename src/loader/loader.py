@@ -1,7 +1,6 @@
 import abc
 import torch
 from importlib import import_module
-import torchvision
 
 class ModelLoader:
     """Represent a ModelLoader class."""
@@ -13,7 +12,7 @@ class ModelLoader:
 
         self.model_path: str = model_path
 
-    def load_model(self):
+    def _load_model(self):
         return NotImplementedError()
     
     def get_model(self):
@@ -30,9 +29,9 @@ class JitScriptLoader(ModelLoader):
         super().__init__(model_path)
 
         self.model: torch.jit.ScriptModule = None
-        self.load_model()
+        self._load_model()
 
-    def load_model(self) -> None:
+    def _load_model(self) -> None:
         self.model = torch.jit.load(self.model_path)
         self.model.eval()
 
@@ -41,7 +40,7 @@ class JitScriptLoader(ModelLoader):
 
 
 class StateDictLoader(ModelLoader):
-    """ Pytorch Ditionary State loader"""
+    """ PyTorch Dictionary State loader"""
 
     def __init__(
         self,
@@ -58,9 +57,9 @@ class StateDictLoader(ModelLoader):
 
         self.model: torch.nn.Module = None
 
-        self.load_model()
+        self._load_model()
 
-    def load_model(self) -> None:
+    def _load_model(self) -> None:
         """ load a model using torch.load function """
 
         self.model = getattr(
@@ -79,8 +78,6 @@ class StateDictLoader(ModelLoader):
     
     def get_model(self) -> torch.nn.Module:
         return self.model
-
-        
 
 
 class HuggingfaceLoader(ModelLoader):
