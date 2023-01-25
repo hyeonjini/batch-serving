@@ -4,7 +4,7 @@ import os
 import requests
 
 
-def load_image(image: Union[str, "PIL.Image.Image"]) -> "PIL.Image.Image":
+def load_image(image: Union[str, "Image.Image"]) -> "Image.Image":
     
     if isinstance(image, str):
         if image.startswith("http://") or image.startswith("https://"):
