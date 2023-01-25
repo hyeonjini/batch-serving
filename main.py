@@ -5,6 +5,7 @@ from datetime import datetime
 from PIL import Image
 import numpy as np
 
+
 def main():
 
     paths = [
@@ -15,7 +16,7 @@ def main():
         "/opt/project/batch-serving/misc/samples/rice2.jpg",
         "/opt/project/batch-serving/misc/samples/noodle2.jpg"
     ]
-    test_model_path = "/opt/project/batch-serving/misc/model_repository/noodle_model.pt"
+    test_model_path = "/opt/project/batch-serving/misc/model_repository/brothy_model_trace.pt"
     # test_brothy_image = np.array(Image.open("/opt/project/batch-serving/misc/samples/brothy.jpg"))
     # test_rice_image = np.array(Image.open("/opt/project/batch-serving/misc/samples/rice.jpg"))
     # test_noodle_image = np.array(Image.open("/opt/project/batch-serving/misc/samples/noodle.jpg"))

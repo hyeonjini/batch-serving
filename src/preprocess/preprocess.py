@@ -1,6 +1,8 @@
 import abc
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 from PIL import Image
+import requests
+import os
 from albumentations import Compose, Resize, Normalize
 from albumentations.pytorch.transforms import ToTensorV2
 
@@ -46,4 +48,3 @@ class TextPreprocess(Preprocess):
     ) -> None:
         pass
 
-    

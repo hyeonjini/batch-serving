@@ -2,8 +2,10 @@ from src.loader.loader import ModelLoader
 from src.preprocess.preprocess import Preprocess
 
 import torch
+import numpy as np
 from abc import ABC, abstractmethod
 from typing import Union, List
+from PIL import Image
 
 
 class Classifier(ABC):
@@ -13,7 +15,6 @@ class Classifier(ABC):
     ) -> None:
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        # self.device = "cpu"
 
         self.loader: ModelLoader = loader
         self.model = self.loader.get_model()
@@ -89,56 +90,32 @@ class ImageClassifier(Classifier):
         super().__init__(**kwargs)
         self.image_preprocess = image_preprocess
 
-    # def __call__(self, images: Union[str, List[str], "Image.Image", List["Image.Image"]], **kwargs):
-    #     pass
-
-    def __call__(self, inputs:torch.Tensor, **kwargs):
-        """_summary_
-
-        Args:
-            inputs (torch.Tensor): _description_
-
-        Returns:
-
-            The dictionaries contain the following keys:
-            label:`str` -- The label identified by the model.
-            score: `float` -- The score attributed by the model for that label. 
-            _type_: _description_
-        """
-        return super().__call__(inputs, **kwargs)
+    def __call__(self, images: Union[torch.Tensor, List[torch.Tensor], "Image.Image", List["Image.Image"]], **kwargs):
+        return super().__call__(images, **kwargs)
     
     def forward(self, inputs, **kwargs):
-        from datetime import datetime
-        start_time = datetime.now()
         if len(inputs.shape) == 3:
             inputs = inputs.unsqueeze(0)
         predictions = None
-        # with torch.no_grad():
+
         with torch.inference_mode():
             inputs = inputs.to(self.device)
-            # predictions = torch.nn.functional.softmax(self.model(inputs), dim=-1)
-            # predictions = predictions.cpu().numpy()
             predictions = self.model(inputs)
-        print("ImageClassifier.forward:", datetime.now()-start_time)
+
         return predictions
     
     def preprocess(self, inputs, **kwargs):
-        from datetime import datetime
-        start_time = datetime.now()
         if not self.image_preprocess:
             return ValueError("`image_preprocess` cannot be None.")
-        preprocess = self.image_preprocess(inputs)
-        if len(preprocess.shape) == 3:
-            preprocess = preprocess.unsqueeze(0)
-        print("ImageClassifier.preprocess:", datetime.now()-start_time)
-        return preprocess
+        
+        if isinstance(inputs, Image.Image):
+            inputs = np.array(inputs)
+
+        return self.image_preprocess(inputs)
     
     def postprocess(self, outputs, **kwargs):
-        from datetime import datetime
-        start_time = datetime.now()
         outputs = torch.nn.functional.softmax(outputs, dim=-1)
-        outputs = outputs.detach().cpu().numpy()
-        print("ImageClassifier.postprocess:", datetime.now()-start_time)
+        outputs = outputs.cpu().numpy()
         return [output for output in outputs] 
 
 
