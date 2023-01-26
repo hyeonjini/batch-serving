@@ -4,7 +4,7 @@ from src.preprocess.preprocess import Preprocess
 import torch
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Union, List
+from typing import Union, List, Optional, Tuple
 from PIL import Image
 
 
@@ -12,11 +12,15 @@ class Classifier(ABC):
     def __init__(
         self,
         loader: ModelLoader,
+        device: Optional[str] = None,
     ) -> None:
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
         self.loader: ModelLoader = loader
+
+        self.device = device
+        if self.device == None:
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
         self.model = self.loader.get_model()
         self.model.to(self.device)
 
@@ -84,18 +88,22 @@ class ImageClassifier(Classifier):
     """
     def __init__(
         self,
-        image_preprocess:Preprocess, 
+        image_preprocess:Preprocess,
+        idx2label:dict,
         **kwargs
     ) -> None:
+
         super().__init__(**kwargs)
         self.image_preprocess = image_preprocess
+        self.idx2label = idx2label
 
     def __call__(self, images: Union[torch.Tensor, List[torch.Tensor], "Image.Image", List["Image.Image"]], **kwargs):
         return super().__call__(images, **kwargs)
     
-    def forward(self, inputs, **kwargs):
+    def forward(self, inputs:torch.Tensor, **kwargs):
         if len(inputs.shape) == 3:
             inputs = inputs.unsqueeze(0)
+
         predictions = None
 
         with torch.inference_mode():
@@ -106,19 +114,58 @@ class ImageClassifier(Classifier):
     
     def preprocess(self, inputs, **kwargs):
         if not self.image_preprocess:
-            return ValueError("`image_preprocess` cannot be None.")
+            return ValueError("`image_preprocess` cannot be `None`.")
         
         if isinstance(inputs, Image.Image):
             inputs = np.array(inputs)
 
         return self.image_preprocess(inputs)
     
-    def postprocess(self, outputs, **kwargs):
-        outputs = torch.nn.functional.softmax(outputs, dim=-1)
+    def postprocess(self, model_outputs, **kwargs):
+        outputs = torch.nn.functional.softmax(model_outputs, dim=-1)
         outputs = outputs.cpu().numpy()
-        return [output for output in outputs] 
+        return outputs
 
 
 class TextClassifier(Classifier):
-    def __init__(self) -> None:
-        super().__init__()
+    
+    def __init__(
+        self,
+        text_preprocess:Preprocess,
+        id2label:dict,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+
+        self.text_preprocess = text_preprocess
+        self.id2label = id2label
+
+    def __call__(self, text: Union[str, List[str]], **kwargs):
+        return super().__call__(text, **kwargs)
+
+    def forward(self, inputs:Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
+
+        predictions = None
+
+        with torch.inference_mode():
+            token_ids, attantion_masks = inputs
+            token_ids = token_ids.to(self.device)
+            attantion_masks = attantion_masks.to(self.device)
+            predictions = self.model(token_ids, attantion_masks)[0]
+
+        return predictions.cpu()
+    
+    def preprocess(self, inputs:str, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.text_preprocess(inputs)
+    
+    def postprocess(self, model_outputs:torch.Tensor, **kwargs):
+        outputs = torch.nn.functional.softmax(model_outputs, dim=-1)
+        values, indices = torch.topk(outputs, k=3, dim=-1)
+        values = values.tolist()[0]
+        indices = indices.tolist()[0]
+
+        if self.id2label:
+            return [{self.id2label[index]:round(value, 4)} for value, index in zip(values, indices)]
+
+        return [{index:round(value, 4)} for value, index in zip(values, indices)]
+
