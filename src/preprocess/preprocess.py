@@ -1,15 +1,14 @@
-import abc
-from typing import Optional, List, Tuple, Union
-from PIL import Image
-import requests
-import os
+from abc import ABC, abstractmethod
+from typing import Optional, Tuple
 from albumentations import Compose, Resize, Normalize
 from albumentations.pytorch.transforms import ToTensorV2
+from torch import Tensor
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast
 
-class Preprocess(abc.ABC):
+class Preprocess(ABC):
     """Represent a preprocess class."""
     
-    @abc.abstractmethod
+    @abstractmethod
     def __call__(self):
         pass
 
@@ -35,16 +34,26 @@ class ImagePreprocess(Preprocess):
             ]
         )
 
-    def __call__(self, image):
+    def __call__(self, image) -> Tensor:
 
         return self.transform(image=image)["image"]
         
 
-    
 class TextPreprocess(Preprocess):
 
     def __init__(
         self,
+        tokenizer: (PreTrainedTokenizer | PreTrainedTokenizerFast),
+        tokenizer_config:dict,
     ) -> None:
-        pass
+        super().__init__()
+        
+        self.tokenizer = tokenizer
+        self.tokenizer_config = tokenizer_config
+    
+    def __call__(self, text:str) -> Tuple[Tensor, Tensor]:
+        
+        inputs = self.tokenizer(text, **self.tokenizer_config)
+
+        return inputs["input_ids"], inputs["attention_mask"]
 
