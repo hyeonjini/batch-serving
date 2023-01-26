@@ -1,8 +1,9 @@
-import abc
+from abc import ABC, abstractmethod
+from typing import Optional
 import torch
 from importlib import import_module
 
-class ModelLoader:
+class ModelLoader(ABC):
     """Represent a ModelLoader class."""
     
     def __init__(
@@ -12,9 +13,11 @@ class ModelLoader:
 
         self.model_path: str = model_path
 
+    @abstractmethod
     def _load_model(self):
         return NotImplementedError()
     
+    @abstractmethod
     def get_model(self):
         return NotImplementedError()
 
@@ -79,9 +82,43 @@ class StateDictLoader(ModelLoader):
         return self.model
 
 
-class HuggingfaceLoader(ModelLoader):
-    """ """
+class HuggingfacePreTrainedModelLoader(ModelLoader):
+    """ Model loader in Huggingface """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        model_name:str,
+        model_path:str,
+    ) -> None:
+
+        super().__init__(model_path)
+
+        self.model_name = model_name
+
+        self.model = None
+        self._load_model()
+
+    def _load_model(self) -> None:
+        self.model = getattr(
+            import_module("transformers"),
+            self.model_name,
+        ).from_pretrained(
+            self.model_path
+        )
+        self.model.eval()
+    
+    def get_model(self) -> torch.nn.Module:
+        return self.model
+    
+    def get_id2label(self) -> Optional[dict]:
+        if self.model.config.id2label:
+            return self.model.config.id2label
+
+        return None
+
+    def get_label2id(self) -> Optional[dict]:
+        if self.model.config.label2id:
+            return self.model.config.label2id
+        
+        return None
     
