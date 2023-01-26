@@ -42,7 +42,7 @@ def test_loader():
     import torch.nn as nn
     from src.loader import loader
 
-    pretrained_model_path = "/opt/project/batch-serving/misc/model_repository/food_name_classification_pretrained_model"
+    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
     model_name = "ElectraForSequenceClassification"
 
     test_loader = loader.HuggingfacePreTrainedModelLoader(
@@ -62,7 +62,7 @@ def test_classifier():
     from src.classifier import classifier
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "/opt/project/batch-serving/misc/model_repository/food_name_classification_pretrained_model"
+    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
     model_name = "ElectraForSequenceClassification"
     tokenizer = AutoTokenizer.from_pretrained(
         "monologg/koelectra-base-v3-discriminator"
@@ -92,6 +92,7 @@ def test_classifier():
     )
 
     assert isinstance(test_classifier, classifier.Classifier)
+    
 
 def test_str_input_inference():
     from src.loader import loader
@@ -99,7 +100,7 @@ def test_str_input_inference():
     from src.classifier import classifier
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "/opt/project/batch-serving/misc/model_repository/food_name_classification_pretrained_model"
+    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
     model_name = "ElectraForSequenceClassification"
     tokenizer = AutoTokenizer.from_pretrained(
         "monologg/koelectra-base-v3-discriminator"
@@ -134,13 +135,14 @@ def test_str_input_inference():
     assert len(output) == topk
     assert isinstance(output, list)
 
+
 def test_list_input_inference():
     from src.loader import loader
     from src.preprocess import preprocess
     from src.classifier import classifier
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "/opt/project/batch-serving/misc/model_repository/food_name_classification_pretrained_model"
+    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
     model_name = "ElectraForSequenceClassification"
     tokenizer = AutoTokenizer.from_pretrained(
         "monologg/koelectra-base-v3-discriminator"
