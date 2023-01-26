@@ -89,13 +89,13 @@ class ImageClassifier(Classifier):
     def __init__(
         self,
         image_preprocess:Preprocess,
-        idx2label:dict,
+        id2label:dict,
         **kwargs
     ) -> None:
 
         super().__init__(**kwargs)
         self.image_preprocess = image_preprocess
-        self.idx2label = idx2label
+        self.id2label = id2label
 
     def __call__(self, images: Union[torch.Tensor, List[torch.Tensor], "Image.Image", List["Image.Image"]], **kwargs):
         return super().__call__(images, **kwargs)
@@ -116,12 +116,15 @@ class ImageClassifier(Classifier):
         if not self.image_preprocess:
             return ValueError("`image_preprocess` cannot be `None`.")
         
+        if isinstance(inputs, torch.Tensor):
+            return inputs
+
         if isinstance(inputs, Image.Image):
             inputs = np.array(inputs)
 
         return self.image_preprocess(inputs)
     
-    def postprocess(self, model_outputs, **kwargs):
+    def postprocess(self, model_outputs:torch.Tensor, **kwargs):
         outputs = torch.nn.functional.softmax(model_outputs, dim=-1)
         outputs = outputs.cpu().numpy()
         return outputs
@@ -156,6 +159,8 @@ class TextClassifier(Classifier):
         return predictions.cpu()
     
     def preprocess(self, inputs:str, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+        if not isinstance(inputs, str):
+            return inputs
         return self.text_preprocess(inputs)
     
     def postprocess(self, model_outputs:torch.Tensor, **kwargs):
