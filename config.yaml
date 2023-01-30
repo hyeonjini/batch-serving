@@ -1,0 +1,18 @@
+text_classification:
+  model:
+    name: ElectraForSequenceClassification
+    path: ./misc/model_repository/food_name_classification_pretrained_model
+
+  tokenizer:
+    path: monologg/koelectra-base-v3-discriminator
+    config:
+      return_tensors: pt
+      truncation: True
+      max_length: 256
+      padding: max_length
+      add_special_tokens: True
+
+image_classification:
+  brothy_classification:
+  noodle_classification:
+  rice_classification:
