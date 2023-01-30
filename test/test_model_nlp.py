@@ -68,7 +68,7 @@ def test_classifier():
         "monologg/koelectra-base-v3-discriminator"
     )
     tokenizer_config = {
-        "return_tensors": "pt",
+        "c": "pt",
         "truncation": True,
         "max_length": 256,
         "padding": 'max_length', 
@@ -86,46 +86,41 @@ def test_classifier():
     )
 
     test_classifier = classifier.TextClassifier(
-        text_preprocess=test_preprocess,
+        preprocessor=test_preprocess,
         id2label=test_loader.get_id2label(),
         loader=test_loader,
     )
 
     assert isinstance(test_classifier, classifier.Classifier)
-    
+
 
 def test_str_input_inference():
     from src.loader import loader
     from src.preprocess import preprocess
     from src.classifier import classifier
+    from src.utils import load_yaml
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
-    model_name = "ElectraForSequenceClassification"
+    config = load_yaml("./config.yaml")["text_classification"]
+
     tokenizer = AutoTokenizer.from_pretrained(
-        "monologg/koelectra-base-v3-discriminator"
+        config["tokenizer"]["path"]
     )
-    tokenizer_config = {
-        "return_tensors": "pt",
-        "truncation": True,
-        "max_length": 256,
-        "padding": 'max_length', 
-        "add_special_tokens": True,
-    }
+
     topk = 3
 
     test_loader = loader.HuggingfacePreTrainedModelLoader(
-        model_name=model_name,
-        model_path=pretrained_model_path
+        model_name=config["model"]["name"],
+        model_path=config["model"]["path"]
     )
 
     test_preprocess = preprocess.TextPreprocess(
         tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config
+        tokenizer_config=config["tokenizer"]["config"]
     )
 
     test_classifier = classifier.TextClassifier(
-        text_preprocess=test_preprocess,
+        preprocessor=test_preprocess,
         id2label=test_loader.get_id2label(),
         loader=test_loader,
     )
@@ -140,34 +135,30 @@ def test_list_input_inference():
     from src.loader import loader
     from src.preprocess import preprocess
     from src.classifier import classifier
+    from src.utils import load_yaml
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
-    model_name = "ElectraForSequenceClassification"
+
+    config = load_yaml("./config.yaml").text_classification
+
     tokenizer = AutoTokenizer.from_pretrained(
-        "monologg/koelectra-base-v3-discriminator"
+        config.tokenizer.path
     )
-    tokenizer_config = {
-        "return_tensors": "pt",
-        "truncation": True,
-        "max_length": 256,
-        "padding": 'max_length', 
-        "add_special_tokens": True,
-    }
+
     topk = 3
 
     test_loader = loader.HuggingfacePreTrainedModelLoader(
-        model_name=model_name,
-        model_path=pretrained_model_path
+        model_name=config.model.name,
+        model_path=config.model.path
     )
 
     test_preprocess = preprocess.TextPreprocess(
         tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config
+        tokenizer_config=config.tokenizer.config
     )
 
     test_classifier = classifier.TextClassifier(
-        text_preprocess=test_preprocess,
+        preprocessor=test_preprocess,
         id2label=test_loader.get_id2label(),
         loader=test_loader,
     )
@@ -184,6 +175,6 @@ def test_list_input_inference():
 
     outputs = test_classifier(inputs)
 
+    assert isinstance(outputs, list)
     assert len(outputs) == 7
     assert len(outputs[0]) == topk
-    assert isinstance(outputs, list)
