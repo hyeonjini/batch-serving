@@ -9,13 +9,26 @@ from PIL import Image
 
 
 class Classifier(ABC):
+    """
+    Represent a Classifier class
+
+    Args:
+        preprocessor (Preprocess):
+        loader (ModelLoader):
+        id2label (dict):
+        device (str):
+    """
     def __init__(
         self,
+        preprocessor: Preprocess,
         loader: ModelLoader,
+        id2label:dict,
         device: Optional[str] = None,
     ) -> None:
 
+        self.preprocessor: Preprocess = preprocessor
         self.loader: ModelLoader = loader
+        self.id2label = id2label
 
         self.device = device
         if self.device == None:
@@ -25,6 +38,14 @@ class Classifier(ABC):
         self.model.to(self.device)
 
     def __call__(self, inputs, **kwargs):
+        """_summary_
+
+        Args:
+            inputs (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
 
         is_list = isinstance(inputs, list)
 
@@ -39,10 +60,26 @@ class Classifier(ABC):
 
     @abstractmethod
     def forward(self, inputs):
+        """_summary_
+
+        Args:
+            inputs (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         return NotImplementedError("forward not implemented")
 
     @abstractmethod
     def preprocess(self, inputs):
+        """_summary_
+
+        Args:
+            inputs (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         return NotImplementedError("preprocess not implemented")
     
     @abstractmethod
@@ -74,33 +111,49 @@ class ImageClassifier(Classifier):
     This pipeline predicts the class of an image.
 
     Example:
+    ```python
+    >>> from src.classifier import classifier
+    >>> from src.loader import loader
+    >>> from src.preprocess import preprocess
 
-        >>> from src.classifier import classifier
-        >>> from src.loader import loader
-        >>> from src.preprocess import preprocess
-
-        >>> test_loader = loader.JitScriptLoader(model_path="PATH/TO/MODEL")
-        >>> test_preprocess = preprocess.ImagePreprocess()
-        >>> test_classifier = classifier.ImageClassifier(loader=test_loader, image_preprocess=test_preprocess)
-
-    Args:
-        Classifier (_type_): _description_
+    >>> test_loader = loader.JitScriptLoader(model_path="PATH/TO/MODEL")
+    >>> test_preprocess = preprocess.ImagePreprocess()
+    >>> test_classifier = classifier.ImageClassifier(loader=test_loader, image_preprocess=test_preprocess)
+    >>> test_classifier("sample.jpg")
+    {'score': 0.9872, 'label': True}
+    ```
     """
     def __init__(
         self,
-        image_preprocess:Preprocess,
-        id2label:dict,
         **kwargs
     ) -> None:
 
         super().__init__(**kwargs)
-        self.image_preprocess = image_preprocess
-        self.id2label = id2label
 
     def __call__(self, images: Union[torch.Tensor, List[torch.Tensor], "Image.Image", List["Image.Image"]], **kwargs):
+        """_summary_
+
+        Args:
+            images (Union[torch.Tensor, List[torch.Tensor], Image.Image, List[Image.Image]]):
+                The pipeline handles four type of images:
+
+                - An image 
+
+
+        Returns:
+            _type_: _description_
+        """
         return super().__call__(images, **kwargs)
     
     def forward(self, inputs:torch.Tensor, **kwargs):
+        """_summary_
+
+        Args:
+            inputs (torch.Tensor): _description_
+
+        Returns:
+            _type_: _description_
+        """
         if len(inputs.shape) == 3:
             inputs = inputs.unsqueeze(0)
 
@@ -113,8 +166,16 @@ class ImageClassifier(Classifier):
         return predictions
     
     def preprocess(self, inputs, **kwargs):
-        if not self.image_preprocess:
-            return ValueError("`image_preprocess` cannot be `None`.")
+        """_summary_
+
+        Args:
+            inputs (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        if not self.preprocessor:
+            return ValueError("`preprocessor: Preprocess` cannot be `None`.")
         
         if isinstance(inputs, torch.Tensor):
             return inputs
@@ -122,31 +183,68 @@ class ImageClassifier(Classifier):
         if isinstance(inputs, Image.Image):
             inputs = np.array(inputs)
 
-        return self.image_preprocess(inputs)
+        return self.preprocessor(inputs)
     
     def postprocess(self, model_outputs:torch.Tensor, **kwargs):
+        """_summary_
+
+        Args:
+            model_outputs (torch.Tensor): _description_
+
+        Returns:
+            _type_: _description_
+        """
         outputs = torch.nn.functional.softmax(model_outputs, dim=-1)
         outputs = outputs.cpu().numpy()
         return outputs
 
 
 class TextClassifier(Classifier):
+    """
+    This pipeline predicts the class of a text.
+
+    Example:
+
+        >>> from src.classifier import classifier
+        >>> from src.loader import loader
+        >>> from src.preprocess import preprocess
+
+        >>> test_loader = loader.
+        >>> test_preprocess = preprocess.TextPreprocess()
+        >>> test_classifier = classifier.TextClassifier()
+
+    Args:
+        text_preprocess (Prerocess): _description_
+        id2label (dict): _description_
+        loader (ModelLoader): _dsecription_
+    """
     
     def __init__(
         self,
-        text_preprocess:Preprocess,
-        id2label:dict,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.text_preprocess = text_preprocess
-        self.id2label = id2label
-
     def __call__(self, text: Union[str, List[str]], **kwargs):
+        """_summary_
+
+        Args:
+            text (Union[str, List[str]]): _description_
+
+        Returns:
+            _type_: _description_
+        """
         return super().__call__(text, **kwargs)
 
     def forward(self, inputs:Tuple[torch.Tensor, torch.Tensor], **kwargs) -> torch.Tensor:
+        """_summary_
+
+        Args:
+            inputs (Tuple[torch.Tensor, torch.Tensor]): _description_
+
+        Returns:
+            torch.Tensor: _description_
+        """
 
         predictions = None
 
@@ -159,11 +257,28 @@ class TextClassifier(Classifier):
         return predictions.cpu()
     
     def preprocess(self, inputs:str, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+        """_summary_
+
+        Args:
+            inputs (str): _description_
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: _description_
+        """
         if not isinstance(inputs, str):
             return inputs
-        return self.text_preprocess(inputs)
+        return self.preprocessor(inputs)
     
     def postprocess(self, model_outputs:torch.Tensor, **kwargs):
+        """
+            postprocess in TextClassification will make model output 
+
+        Args:
+            model_outputs (torch.Tensor): model output from `forward`
+
+        Returns:
+            list: 
+        """
         outputs = torch.nn.functional.softmax(model_outputs, dim=-1)
         values, indices = torch.topk(outputs, k=3, dim=-1)
         values = values.tolist()[0]

@@ -1,8 +1,0 @@
-classifier:
-  type: brothy
-
-preprocess:
-  type: image
-  
-service:
-  type: cv
