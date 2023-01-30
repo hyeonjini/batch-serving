@@ -14,12 +14,17 @@ class Preprocess(ABC):
 
 
 class ImagePreprocess(Preprocess):
+    """_summary_
+
+    Args:
+        Preprocess (_type_): _description_
+    """
 
     def __init__(
         self,
         resize: Optional[Tuple[int, int]] = (256, 256), 
-        std: Optional[Tuple[int, int, int]] = (0.229, 0.224, 0.225),
-        mean: Optional[Tuple[int, int, int]] = (0.485, 0.456, 0.406),
+        std: Optional[Tuple[float, float, float]] = (0.229, 0.224, 0.225),
+        mean: Optional[Tuple[float, float, float]] = (0.485, 0.456, 0.406),
     ) -> None:
 
         self.resize = resize
@@ -35,11 +40,24 @@ class ImagePreprocess(Preprocess):
         )
 
     def __call__(self, image) -> Tensor:
+        """_summary_
+
+        Args:
+            image (_type_): _description_
+
+        Returns:
+            Tensor: _description_
+        """
 
         return self.transform(image=image)["image"]
         
 
 class TextPreprocess(Preprocess):
+    """_summary_
+
+    Args:
+        Preprocess (_type_): _description_
+    """
 
     def __init__(
         self,
@@ -52,6 +70,14 @@ class TextPreprocess(Preprocess):
         self.tokenizer_config = tokenizer_config
     
     def __call__(self, text:str) -> Tuple[Tensor, Tensor]:
+        """_summary_
+
+        Args:
+            text (str): _description_
+
+        Returns:
+            Tuple[Tensor, Tensor]: _description_
+        """
         
         inputs = self.tokenizer(text, **self.tokenizer_config)
 
