@@ -15,10 +15,20 @@ class ModelLoader(ABC):
 
     @abstractmethod
     def _load_model(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return NotImplementedError()
     
     @abstractmethod
     def get_model(self):
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        """
         return NotImplementedError()
 
 
@@ -35,6 +45,8 @@ class JitScriptLoader(ModelLoader):
         self._load_model()
 
     def _load_model(self) -> None:
+        """_summary_
+        """
         self.model = torch.jit.load(self.model_path)
         self.model.eval()
 
@@ -44,6 +56,11 @@ class JitScriptLoader(ModelLoader):
                 self.model(torch.randn(3, 3, 224, 224))
 
     def get_model(self) -> torch.jit.ScriptModule:
+        """_summary_
+
+        Returns:
+            torch.jit.ScriptModule: _description_
+        """
         return self.model
 
 
@@ -68,7 +85,7 @@ class StateDictLoader(ModelLoader):
         self._load_model()
 
     def _load_model(self) -> None:
-        """ load a model using torch.load function """
+        """ load a model using `torch.load` function """
 
         self.model = getattr(
             import_module("src.model"),
@@ -79,6 +96,11 @@ class StateDictLoader(ModelLoader):
         self.model.eval()
     
     def get_model(self) -> torch.nn.Module:
+        """_summary_
+
+        Returns:
+            torch.nn.Module: _description_
+        """
         return self.model
 
 
@@ -99,6 +121,8 @@ class HuggingfacePreTrainedModelLoader(ModelLoader):
         self._load_model()
 
     def _load_model(self) -> None:
+        """_summary_
+        """
         self.model = getattr(
             import_module("transformers"),
             self.model_name,
@@ -108,15 +132,30 @@ class HuggingfacePreTrainedModelLoader(ModelLoader):
         self.model.eval()
     
     def get_model(self) -> torch.nn.Module:
+        """_summary_
+
+        Returns:
+            torch.nn.Module: _description_
+        """
         return self.model
     
     def get_id2label(self) -> Optional[dict]:
+        """_summary_
+
+        Returns:
+            Optional[dict]: _description_
+        """
         if self.model.config.id2label:
             return self.model.config.id2label
 
         return None
 
     def get_label2id(self) -> Optional[dict]:
+        """_summary_
+
+        Returns:
+            Optional[dict]: _description_
+        """
         if self.model.config.label2id:
             return self.model.config.label2id
         
