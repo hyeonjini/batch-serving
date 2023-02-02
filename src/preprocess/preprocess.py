@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
+from typing import Optional, List, Tuple
 from albumentations import Compose, Resize, Normalize
 from albumentations.pytorch.transforms import ToTensorV2
 from torch import Tensor
@@ -22,9 +22,9 @@ class ImagePreprocess(Preprocess):
 
     def __init__(
         self,
-        resize: Optional[Tuple[int, int]] = (256, 256), 
-        std: Optional[Tuple[float, float, float]] = (0.229, 0.224, 0.225),
-        mean: Optional[Tuple[float, float, float]] = (0.485, 0.456, 0.406),
+        resize: Optional[List[int]] = [256, 256], 
+        std: Optional[List[float]] = [0.229, 0.224, 0.225],
+        mean: Optional[List[float]] = [0.485, 0.456, 0.406],
     ) -> None:
 
         self.resize = resize
