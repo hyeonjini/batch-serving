@@ -195,8 +195,16 @@ class ImageClassifier(Classifier):
             _type_: _description_
         """
         outputs = torch.nn.functional.softmax(model_outputs, dim=-1)
+        values, indices = torch.max(outputs, dim=-1)
+        values = values.tolist()
+        indices = indices.tolist()
+
         outputs = outputs.cpu().numpy()
-        return outputs
+
+        if self.id2label:
+            return [{self.id2label[index]:round(value, 4)} for value, index in zip(values, indices)]
+
+        return [{index:round(value, 4)} for value, index in zip(values, indices)]
 
 
 class TextClassifier(Classifier):
@@ -267,6 +275,7 @@ class TextClassifier(Classifier):
         """
         if not isinstance(inputs, str):
             return inputs
+            
         return self.preprocessor(inputs)
     
     def postprocess(self, model_outputs:torch.Tensor, **kwargs):
