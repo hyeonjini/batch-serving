@@ -13,6 +13,33 @@ text_classification:
       add_special_tokens: True
 
 image_classification:
-  brothy_classification:
-  noodle_classification:
-  rice_classification:
+  brothy:
+    model:
+      path: ./misc/model_repository/brothy_model_state_dict.pt
+      name: DenseNet
+      arch: densenet161
+      num_classes: 2
+    aug:
+      resize: [224, 224]
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+  noodle:
+    model:
+      path: ./misc/model_repository/noodle_model_state_dict.pt
+      name: ResNet
+      arch: resnet152
+      num_classes: 2
+    aug:
+      resize: [224, 224]
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+  rice:
+    model:
+      path: ./misc/model_repository/rice_model_state_dict.pt
+      name: DenseNet
+      arch: densenet121
+      num_classes: 2
+    aug:
+      resize: [224, 224]
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
