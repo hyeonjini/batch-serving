@@ -1,6 +1,5 @@
 def test_load_config():
     from src.utils import load_yaml
-    import os
 
     config = load_yaml("./config.yaml", attr=False)
     text_classification_config = config["text_classification"]
@@ -9,6 +8,7 @@ def test_load_config():
 
     assert text_classification_model_name == "ElectraForSequenceClassification"
     assert text_classification_model_path == "./misc/model_repository/food_name_classification_pretrained_model"
+
 
 def test_load_config_attr():
     from src.utils import load_yaml
@@ -28,6 +28,28 @@ def test_load_config_attr():
     assert model_path == "./misc/model_repository/food_name_classification_pretrained_model"
     assert tokenizer_path == "monologg/koelectra-base-v3-discriminator"
     assert isinstance(tokenizer_config, dict)
+
+
+def test_load_config_for_brothy():
+    from src.utils import load_yaml
+    import addict
+
+    config = load_yaml("./config.yaml")
+    config = config.image_classification.brothy
+    model_path = config.model.path
+    model_name = config.model.name
+    model_arch = config.model.arch
+    resize = config.aug.resize
+    mean = config.aug.mean
+    std = config.aug.std
+
+    assert model_path == "./misc/model_repository/brothy_model_state_dict.pt"
+    assert model_name == "DenseNet"
+    assert model_arch == "densenet161"
+    assert isinstance(resize, list)
+    assert isinstance(mean, list)
+    assert isinstance(std, list)
+
 
 def test_load_image():
     pass

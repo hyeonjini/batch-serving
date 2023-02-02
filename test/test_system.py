@@ -3,39 +3,32 @@ from torch.profiler import profile, record_function, ProfilerActivity
 from src.preprocess import preprocess
 from src.loader import loader
 from src.classifier import classifier
+from src.utils import load_image, load_yaml
 import random
 import string
 
+ROW_LIMIT = 7
 
 def test_text_classification_cpu():
 
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
-    model_name = "ElectraForSequenceClassification"
-    tokenizer = AutoTokenizer.from_pretrained(
-        "monologg/koelectra-base-v3-discriminator"
-    )
-    tokenizer_config = {
-        "return_tensors": "pt",
-        "truncation": True,
-        "max_length": 256,
-        "padding": 'max_length', 
-        "add_special_tokens": True,
-    }
+    config = load_yaml("./config.yaml").text_classification
 
     test_loader = loader.HuggingfacePreTrainedModelLoader(
-        model_name=model_name,
-        model_path=pretrained_model_path
+        model_name=config.model.name,
+        model_path=config.model.path
     )
 
     test_preprocess = preprocess.TextPreprocess(
-        tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config
+        tokenizer=AutoTokenizer.from_pretrained(
+            config.tokenizer.path
+        ),
+        tokenizer_config=config.tokenizer.config
     )
 
     test_classifier = classifier.TextClassifier(
-        text_preprocess=test_preprocess,
+        preprocessor=test_preprocess,
         id2label=test_loader.get_id2label(),
         loader=test_loader,
         device="cpu"
@@ -48,37 +41,28 @@ def test_text_classification_cpu():
         with record_function("model_inference"):
             test_classifier(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cpu_memory_usage"))
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=ROW_LIMIT))
 
 
 def test_text_classification_gpu():
     from transformers import AutoTokenizer
 
-    pretrained_model_path = "./misc/model_repository/food_name_classification_pretrained_model"
-    model_name = "ElectraForSequenceClassification"
-    tokenizer = AutoTokenizer.from_pretrained(
-        "monologg/koelectra-base-v3-discriminator"
-    )
-    tokenizer_config = {
-        "return_tensors": "pt",
-        "truncation": True,
-        "max_length": 256,
-        "padding": 'max_length', 
-        "add_special_tokens": True,
-    }
+    config = load_yaml("./config.yaml").text_classification
 
     test_loader = loader.HuggingfacePreTrainedModelLoader(
-        model_name=model_name,
-        model_path=pretrained_model_path
+        model_name=config.model.name,
+        model_path=config.model.path
     )
 
     test_preprocess = preprocess.TextPreprocess(
-        tokenizer=tokenizer,
-        tokenizer_config=tokenizer_config
+        tokenizer=AutoTokenizer.from_pretrained(
+            config.tokenizer.path
+        ),
+        tokenizer_config=config.tokenizer.config
     )
 
     test_classifier = classifier.TextClassifier(
-        text_preprocess=test_preprocess,
+        preprocessor=test_preprocess,
         id2label=test_loader.get_id2label(),
         loader=test_loader,
     )
@@ -89,123 +73,214 @@ def test_text_classification_gpu():
         with record_function("model_inference"):
             test_classifier(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cuda_memory_usage"))
+    print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=ROW_LIMIT))
 
 
 def test_brothy_classification_cpu():
-    model_path = "./misc/model_repository/brothy_model_state_dict.pt"
 
-    test_preprocess = preprocess.ImagePreprocess()
+    config = load_yaml("./config.yaml").image_classification
+
+    test_preprocess = preprocess.ImagePreprocess(
+        resize=config.brothy.aug.resize,
+        std=config.brothy.aug.std,
+        mean=config.brothy.aug.mean
+    )
+
+    # PyTorch State Dictionary Loader
     test_loader = loader.StateDictLoader(
-        model_path=model_path,
-        model_name="DenseNet",
-        model_arc="densenet161",
-        num_classes=2,
+        model_path=config.brothy.model.path,
+        model_name=config.brothy.model.name,
+        model_arc=config.brothy.model.arch,
+        num_classes=config.brothy.model.num_classes
     )
     test_classifier = classifier.ImageClassifier(
-        image_preprocess=test_preprocess,
-        id2label={
-            0:False,
-            1:True,
-        },
+        preprocessor=test_preprocess,
         loader=test_loader,
+        id2label={
+            0: False,
+            1: True
+        },
         device="cpu"
     )
 
-    inputs = torch.rand(3, 256, 256)
+    inputs = torch.rand(3, 224, 224)
 
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
         with record_function("model_inference"):
             test_classifier(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cpu_memory_usage"))
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=ROW_LIMIT))
 
 
 def test_brothy_classification_gpu():
-    model_path = "./misc/model_repository/brothy_model_state_dict.pt"
+    config = load_yaml("./config.yaml").image_classification.brothy
 
-    test_preprocess = preprocess.ImagePreprocess()
+    test_preprocess = preprocess.ImagePreprocess(
+        resize=config.aug.resize,
+        std=config.aug.std,
+        mean=config.aug.mean
+    )
+
+    # PyTorch State Dictionary Loader
     test_loader = loader.StateDictLoader(
-        model_path=model_path,
-        model_name="DenseNet",
-        model_arc="densenet161",
-        num_classes=2,
+        model_path=config.model.path,
+        model_name=config.model.name,
+        model_arc=config.model.arch,
+        num_classes=config.model.num_classes
     )
     test_classifier = classifier.ImageClassifier(
-        image_preprocess=test_preprocess,
-        id2label={
-            0:False,
-            1:True,
-        },
+        preprocessor=test_preprocess,
         loader=test_loader,
+        id2label={
+            0: False,
+            1: True
+        }
     )
 
-    inputs = torch.rand(3, 256, 256)
+    inputs = torch.rand(3, 224, 224)
 
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
         with record_function("model_inference"):
             test_classifier(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cuda_memory_usage"))
+    print(prof.key_averages().table(sort_by="self_cuda_memory_usage", row_limit=ROW_LIMIT))
 
 
 def test_rice_classification_cpu():
-    model_path = "./misc/model_repository/rice_model_state_dict.pt"
 
-    test_preprocess = preprocess.ImagePreprocess()
+    config = load_yaml("./config.yaml").image_classification.rice
+
+    test_preprocess = preprocess.ImagePreprocess(
+        resize=config.aug.resize,
+        std=config.aug.std,
+        mean=config.aug.mean
+    )
+
+    # PyTorch State Dictionary Loader
     test_loader = loader.StateDictLoader(
-        model_path=model_path,
-        model_name="DenseNet",
-        model_arc="densenet121",
-        num_classes=2,
+        model_path=config.model.path,
+        model_name=config.model.name,
+        model_arc=config.model.arch,
+        num_classes=config.model.num_classes
     )
     test_classifier = classifier.ImageClassifier(
-        image_preprocess=test_preprocess,
-        id2label={
-            0:False,
-            1:True,
-        },
+        preprocessor=test_preprocess,
         loader=test_loader,
+        id2label={
+            0: False,
+            1: True
+        },
         device="cpu"
     )
 
-    # inputs = [torch.randn(3, 256, 256) for _ in range(100)]
-    inputs = torch.rand(3, 256, 256)
+    inputs = torch.rand(3, 224, 224)
 
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
         with record_function("model_inference"):
             test_classifier(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cpu_memory_usage"))
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=ROW_LIMIT))
 
 
 def test_rice_classification_gpu():
-    model_path = "./misc/model_repository/rice_model_state_dict.pt"
+    config = load_yaml("./config.yaml").image_classification.rice
 
-    test_preprocess = preprocess.ImagePreprocess()
+    test_preprocess = preprocess.ImagePreprocess(
+        resize=config.aug.resize,
+        std=config.aug.std,
+        mean=config.aug.mean
+    )
+
+    # PyTorch State Dictionary Loader
     test_loader = loader.StateDictLoader(
-        model_path=model_path,
-        model_name="DenseNet",
-        model_arc="densenet121",
-        num_classes=2,
+        model_path=config.model.path,
+        model_name=config.model.name,
+        model_arc=config.model.arch,
+        num_classes=config.model.num_classes
     )
     test_classifier = classifier.ImageClassifier(
-        image_preprocess=test_preprocess,
-        id2label={
-            0:False,
-            1:True,
-        },
+        preprocessor=test_preprocess,
         loader=test_loader,
+        id2label={
+            0: False,
+            1: True
+        }
     )
 
-    # inputs = [torch.randn(3, 256, 256) for _ in range(100)]
-    inputs = torch.rand(3, 256, 256)
+    inputs = torch.rand(3, 224, 224)
 
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
         with record_function("model_inference"):
             test_classifier(inputs)
 
-    print(prof.key_averages().table(sort_by="self_cpu_memory_usage"))
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=ROW_LIMIT))
 
-def test_noodle_classification():
-    pass
+
+
+def test_noodle_classification_cpu():
+    config = load_yaml("./config.yaml").image_classification.noodle
+
+    test_preprocess = preprocess.ImagePreprocess(
+        resize=config.aug.resize,
+        std=config.aug.std,
+        mean=config.aug.mean
+    )
+
+    # PyTorch State Dictionary Loader
+    test_loader = loader.StateDictLoader(
+        model_path=config.model.path,
+        model_name=config.model.name,
+        model_arc=config.model.arch,
+        num_classes=config.model.num_classes
+    )
+    test_classifier = classifier.ImageClassifier(
+        preprocessor=test_preprocess,
+        loader=test_loader,
+        id2label={
+            0: False,
+            1: True
+        },
+        device="cpu"
+    )
+
+    inputs = torch.rand(3, 224, 224)
+
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
+        with record_function("model_inference"):
+            test_classifier(inputs)
+
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=ROW_LIMIT))
+
+
+def test_noodle_classification_gpu():
+    config = load_yaml("./config.yaml").image_classification.noodle
+
+    test_preprocess = preprocess.ImagePreprocess(
+        resize=config.aug.resize,
+        std=config.aug.std,
+        mean=config.aug.mean
+    )
+
+    # PyTorch State Dictionary Loader
+    test_loader = loader.StateDictLoader(
+        model_path=config.model.path,
+        model_name=config.model.name,
+        model_arc=config.model.arch,
+        num_classes=config.model.num_classes
+    )
+    test_classifier = classifier.ImageClassifier(
+        preprocessor=test_preprocess,
+        loader=test_loader,
+        id2label={
+            0: False,
+            1: True
+        }
+    )
+
+    inputs = torch.rand(3, 224, 224)
+
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], profile_memory=True, record_shapes=True, with_stack=True) as prof:
+        with record_function("model_inference"):
+            test_classifier(inputs)
+
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=ROW_LIMIT))
